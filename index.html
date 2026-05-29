@@ -496,12 +496,11 @@ footer .ft-copy{
 }
 
 /* ===== LANG SWITCH ===== */
-.lang-ja{display:block}.lang-en{display:none}
-body.mode-en .lang-ja{display:none}
-body.mode-en .lang-en{display:block}
-.lang-ja-i{display:inline}.lang-en-i{display:none}
-body.mode-en .lang-ja-i{display:none}
-body.mode-en .lang-en-i{display:inline}
+/* === LANG SWITCH — JSのsetProperty制御に一本化 === */
+.lang-ja  { display: block;  }
+.lang-en  { display: none;   }
+.lang-ja-i { display: inline; }
+.lang-en-i { display: none;  }
 
 /* ===== RESPONSIVE ===== */
 @media(max-width:900px){
@@ -955,32 +954,39 @@ body.mode-en .lang-en-i{display:inline}
 
 
 <script>
-(function() {
-  function setLang(lang) {
-    var body = document.body;
+(function () {
+  function applyLang(lang) {
+    var isEn = (lang === 'en');
+
+    /* body クラス切替 */
+    document.body.classList.toggle('mode-en', isEn);
+    document.documentElement.lang = isEn ? 'en' : 'ja';
+
+    /* ナビボタンのactive */
     var btnJa = document.getElementById('btnJa');
     var btnEn = document.getElementById('btnEn');
-    if (!btnJa || !btnEn) return;
+    if (btnJa) btnJa.classList.toggle('active', !isEn);
+    if (btnEn) btnEn.classList.toggle('active',  isEn);
 
-    if (lang === 'en') {
-      body.classList.add('mode-en');
-      btnEn.classList.add('active');
-      btnJa.classList.remove('active');
-      document.documentElement.lang = 'en';
-    } else {
-      body.classList.remove('mode-en');
-      btnJa.classList.add('active');
-      btnEn.classList.remove('active');
-      document.documentElement.lang = 'ja';
-    }
+    /* 全lang要素を直接制御（!important CSS対策 — 空文字ではなく明示指定） */
+    document.querySelectorAll('.lang-ja').forEach(function(el) {
+      el.style.setProperty('display', isEn ? 'none' : 'block', 'important');
+    });
+    document.querySelectorAll('.lang-en').forEach(function(el) {
+      el.style.setProperty('display', isEn ? 'block' : 'none', 'important');
+    });
+    document.querySelectorAll('.lang-ja-i').forEach(function(el) {
+      el.style.setProperty('display', isEn ? 'none' : 'inline', 'important');
+    });
+    document.querySelectorAll('.lang-en-i').forEach(function(el) {
+      el.style.setProperty('display', isEn ? 'inline' : 'none', 'important');
+    });
   }
 
-  // グローバルに公開（onclick="setLang(...)" から呼べるよう）
-  window.setLang = setLang;
+  window.setLang = applyLang;
 
-  // ページ読み込み完了後に日本語で初期化
-  document.addEventListener('DOMContentLoaded', function() {
-    setLang('ja');
+  document.addEventListener('DOMContentLoaded', function () {
+    applyLang('ja');
   });
 })();
 </script>
